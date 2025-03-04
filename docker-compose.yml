@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # Vector Database Service
+  weaviate:
+    image: semitechnologies/weaviate:1.23.9
+    ports:
+      - "8080:8080"
+    restart: on-failure:0
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'none'
+      CLUSTER_HOSTNAME: 'node1'
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    networks:
+      - leadership-network
+
+  # Data Engineering Service
+  content-harvester:
+    build:
+      context: ./leadership-content-harvester
+    depends_on:
+      - weaviate
+    environment:
+      - WEAVIATE_URL=http://weaviate:8080
+    volumes:
+      - content_data:/data
+    networks:
+      - leadership-network
+
+  # Backend Service
+  coach-engine:
+    build:
+      context: ./leadership-coach-engine
+    ports:
+      - "5000:5000"
+    depends_on:
+      - weaviate
+    environment:
+      - WEAVIATE_URL=http://weaviate:8080
+    networks:
+      - leadership-network
+
+  # Frontend Service
+  coach-ui:
+    build:
+      context: ./leadership-coach-ui
+    ports:
+      - "8501:8501"
+    depends_on:
+      - coach-engine
+    environment:
+      - BACKEND_URL=http://coach-engine:5000
+    networks:
+      - leadership-network
+
+volumes:
+  weaviate_data:
+  content_data:
+
+networks:
+  leadership-network:
+    driver: bridge
