@@ -1,0 +1,38 @@
+# Python
+*.pyc
+__pycache__/
+.__pycache__/
+
+# MacOS
+.DS_Store
+
+# IDE related
+.vscode/
+.idea/
+
+# Local enviroment
+.venv/
+venv/
+
+
+# Local data
+/data
+
+# Jupyter notebook
+.ipynb_checkpoints/
+*.ipynb
+
+# Local logs
+/logs
+
+# CSV files
+#*.csv
+
+# Excel files
+#*.xls
+#*.xlsx
+
+# Local test files
+/local_test
+
+test*.py
