@@ -1,0 +1,15 @@
+{
+  "app": {
+    "youtube_playlist_id": "PLCi3Q_-uGtdlCsFXHLDDHBSLyq4BkQ6gZ",
+    "weaviate_url": "http://localhost:8080",
+    "weaviate_collection_name": "VideoTranscripts",
+    "storage_type": "excel",
+    "batch_size": 10,
+    "chunk_size": 500,
+    "chunk_overlap": 100,
+    "log_level": "INFO",
+    "data_path": "data",
+    "excel_output_path": "leadership_transcripts.xlsx",
+    "max_videos": 0
+  }
+}
