@@ -12,14 +12,24 @@ class StorageType(str, Enum):
     VECTOR_DB = "vector_db" 
     BOTH = "both"
 
+    @classmethod
+    def from_string(cls, value: str) -> "StorageType":
+        """Convert string to StorageType enum."""
+        if value.lower() == "excel":
+            return cls.EXCEL
+        elif value.lower() in ["vector_db", "vector", "vectordb", "milvus"]:
+            return cls.VECTOR_DB
+        elif value.lower() == "both":
+            return cls.BOTH
+        else:
+            raise ValueError(f"Invalid storage type: {value}")
+
 class Config:
     """Configuration for the content harvester."""
     
     def __init__(self, config_path: str = "config.json"):
         # Default configuration
         self.youtube_playlist_id = "PLCi3Q_-uGtdlCsFXHLDDHBSLyq4BkQ6gZ"
-        self.weaviate_url = "http://weaviate:8080"
-        self.weaviate_collection_name = "LeadershipWisdom"
         self.storage_type = StorageType.EXCEL
         self.batch_size = 10
         self.chunk_size = 1000
@@ -28,6 +38,18 @@ class Config:
         self.data_path = "/data"
         self.excel_output_path = "transcripts.xlsx"
         self.max_videos = 0  # 0 means process all videos
+        
+        # Milvus settings
+        self.milvus_uri = "http://localhost:19530"
+        self.milvus_token = ""
+        self.milvus_user = ""
+        self.milvus_password = ""
+        self.milvus_collection_name = "video_transcripts"
+        self.milvus_index_type = "FLAT"
+        self.milvus_metric_type = "COSINE"
+        
+        # Embedding model settings
+        self.embedding_model = "sentence-transformers/sentence-t5-base"
         
         # Load configuration from file
         self.load_config(config_path)
@@ -51,7 +73,7 @@ class Config:
                         if hasattr(self, key):
                             # Handle special case for storage_type enum
                             if key == "storage_type":
-                                setattr(self, key, StorageType(value))
+                                setattr(self, key, StorageType.from_string(value))
                             else:
                                 setattr(self, key, value)
             else:
