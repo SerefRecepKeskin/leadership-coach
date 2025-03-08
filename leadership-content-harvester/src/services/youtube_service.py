@@ -168,29 +168,32 @@ class YouTubeService:
         try:
             # Import yt-dlp locally to avoid dependency issues if it's not installed
             import yt_dlp
-            
+
             # Configure yt-dlp options optimized for Whisper
             ydl_opts = {
                 'format': 'bestaudio/best',  # Get best audio quality
                 'outtmpl': str(download_dir / f"{video_id}.%(ext)s"),  # Output file path pattern
-                'quiet': True,  # Reduce console output
-                'no_warnings': True,  # Suppress warnings
+                'quiet': False,  # Set to False to see detailed output for debugging
+                'no_warnings': False,  # Set to False to see warnings for debugging
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',  # Extract audio using ffmpeg
                     'preferredcodec': 'wav',      # Convert to WAV format for best Whisper compatibility
-                    'preferredquality': '16k',    # 16kHz sampling rate (preferred by Whisper)
-                }, {
-                    'key': 'FFmpegMetadata',      # Update metadata
+                    'preferredquality': '192',    # Higher quality, can be reduced later
                 }],
-                # Additional FFmpeg parameters for Whisper optimization
-                'postprocessor_args': [
-                    'FFmpegExtractAudio', '-ar', '16000', '-ac', '1'  # 16kHz sample rate, mono channel
-                ],
+                # Simplified FFmpeg parameters
+                'postprocessor_args': {
+                    'FFmpegExtractAudio': ['-ar', '16000', '-ac', '1'],  # 16kHz sample rate, mono channel
+                },
             }
-            
+
             # Download the audio
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([f'https://www.youtube.com/watch?v={video_id}'])
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(f'https://www.youtube.com/watch?v={video_id}', download=True)
+                    # Print the downloaded filename for confirmation
+                    print(f"Downloaded audio: {info.get('title')}")
+            except Exception as e:
+                print(f"Error occurred: {e}")
             
             # Check if the file was correctly generated with wav extension
             if not cache_path.exists():
