@@ -192,7 +192,8 @@ class TranscriptService:
             logger.info(f"Transcribing audio with Whisper for {video_id}")
             
             # Load Whisper model - choose a smaller model for faster processing
-            model = whisper.load_model("base")
+            # Load Whisper model - large model for best accuracy
+            model = whisper.load_model("large")
             
             # The audio is already optimized for Whisper (WAV 16kHz mono)
             # so we can directly transcribe it without additional preprocessing
