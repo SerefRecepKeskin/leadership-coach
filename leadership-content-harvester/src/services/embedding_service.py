@@ -1,72 +1,86 @@
-from transformers import AutoTokenizer, AutoModel
-import torch
-from typing import List
-from loguru import logger
+from typing import List, Union
 import numpy as np
-from pathlib import Path
-from config import get_config
+from loguru import logger
+from sentence_transformers import SentenceTransformer
 
 class EmbeddingService:
-    """Service for generating text embeddings."""
+    """Service for generating embeddings from text using sentence transformers."""
     
-    def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
-        """Initialize embedding service with a specific model."""
-        self.config = get_config()
-        self.model_name = model_name
-        self.tokenizer = None
-        self.model = None
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.cache_dir = Path(self.config.data_path) / "cache" / "embeddings"
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
+    def __init__(self, model_name: str = "sentence-transformers/sentence-t5-base", device: str = "cpu"):
+        """
+        Initialize the embedding service.
         
-        self.load_model()
-    
-    def load_model(self) -> None:
-        """Load the embedding model."""
+        Args:
+            model_name: Name or path of the sentence transformer model
+            device: Device to use for inference ('cpu' or 'cuda')
+        """
+        logger.info(f"Initializing embedding service with model: {model_name} on device: {device}")
         try:
-            logger.info(f"Loading embedding model: {self.model_name}")
-            self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-            self.model = AutoModel.from_pretrained(self.model_name).to(self.device)
-            logger.info(f"Model loaded successfully (using {self.device})")
+            self.model = SentenceTransformer(model_name, device=device)
+            self.batch_size = 16  # Default batch size for CPU
+            if device == "cuda":
+                self.batch_size = 32  # Larger batch size for GPU
         except Exception as e:
-            logger.error(f"Error loading embedding model: {e}")
+            logger.error(f"Failed to load embedding model: {e}")
             raise
     
-    def mean_pooling(self, model_output, attention_mask):
-        """Perform mean pooling on token embeddings."""
-        token_embeddings = model_output[0]
-        input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-        return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
-    
-    def generate_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Generate embeddings for a list of texts."""
+    def generate_embeddings(self, texts: List[str]) -> List[np.ndarray]:
+        """
+        Generate embeddings for a list of texts.
+        
+        Args:
+            texts: List of texts to generate embeddings for
+            
+        Returns:
+            List of embeddings as numpy arrays
+        """
         if not texts:
-            logger.warning("Empty list provided for embedding generation")
+            logger.warning("Empty text list provided for embedding generation")
             return []
-            
+        
         try:
-            # Tokenize the input texts
-            encoded_input = self.tokenizer(
-                texts, 
-                padding=True, 
-                truncation=True, 
-                max_length=512, 
-                return_tensors='pt'
-            ).to(self.device)
+            logger.info(f"Generating embeddings for {len(texts)} texts")
+            embeddings = []
             
-            # Compute token embeddings
-            with torch.no_grad():
-                model_output = self.model(**encoded_input)
+            # Process in batches to avoid memory issues
+            for i in range(0, len(texts), self.batch_size):
+                batch_texts = texts[i:i + self.batch_size]
+                logger.debug(f"Processing batch {i//self.batch_size + 1} with {len(batch_texts)} texts")
                 
-            # Perform mean pooling
-            embeddings = self.mean_pooling(model_output, encoded_input['attention_mask'])
+                batch_embeddings = self.model.encode(
+                    batch_texts, 
+                    show_progress_bar=False, 
+                    convert_to_numpy=True
+                )
+                
+                # Add batch embeddings to results
+                for emb in batch_embeddings:
+                    embeddings.append(emb)
             
-            # Normalize embeddings
-            normalized_embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
-            
-            # Convert to list of lists (float values)
-            return normalized_embeddings.cpu().numpy().tolist()
+            logger.info(f"Successfully generated {len(embeddings)} embeddings")
+            return embeddings
             
         except Exception as e:
             logger.error(f"Error generating embeddings: {e}")
             return []
+    
+    def generate_embedding(self, text: str) -> Union[np.ndarray, None]:
+        """
+        Generate embedding for a single text.
+        
+        Args:
+            text: Text to generate embedding for
+            
+        Returns:
+            Embedding as numpy array, or None if error occurred
+        """
+        if not text:
+            logger.warning("Empty text provided for embedding generation")
+            return None
+            
+        try:
+            embedding = self.model.encode(text, convert_to_numpy=True)
+            return embedding
+        except Exception as e:
+            logger.error(f"Error generating embedding for text: {e}")
+            return None
