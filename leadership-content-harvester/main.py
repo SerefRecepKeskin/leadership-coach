@@ -14,7 +14,7 @@ if str(project_root) not in sys.path:
 from src.services import (
     YouTubeService,
     TranscriptService,
-    WeaviateService,
+    MilvusService,
     EmbeddingService,
     ExcelService
 )
@@ -26,7 +26,7 @@ PROJECT_DIR = Path(__file__).parent.parent
 def process_video(video_data: Dict[str, Any], 
                   transcript_service: TranscriptService,
                   embedding_service: EmbeddingService = None,
-                  weaviate_service: WeaviateService = None,
+                  milvus_service: MilvusService = None,
                   excel_service: ExcelService = None) -> bool:
     """Process a single video: get transcript, generate embeddings, store data."""
     config = get_config()
@@ -37,8 +37,8 @@ def process_video(video_data: Dict[str, Any],
         return False
     
     # Check if video already exists in vector DB (if applicable)
-    if config.storage_type in [StorageType.VECTOR_DB, StorageType.BOTH] and weaviate_service:
-        if weaviate_service.video_exists(video_id):
+    if config.storage_type in [StorageType.VECTOR_DB, StorageType.BOTH] and milvus_service:
+        if milvus_service.video_exists(video_id):
             logger.info(f"Video {video_id} already in database, skipping")
             return False
     
@@ -67,14 +67,14 @@ def process_video(video_data: Dict[str, Any],
         logger.info(f"Storing transcript for video {video_id} in Excel")
         excel_service.append_transcripts(transcript_data)
     
-    # Store in vector DB if configured
-    if config.storage_type in [StorageType.VECTOR_DB, StorageType.BOTH] and weaviate_service and embedding_service:
+    # Store in Milvus if configured
+    if config.storage_type in [StorageType.VECTOR_DB, StorageType.BOTH] and milvus_service and embedding_service:
         logger.info(f"Generating embeddings for video {video_id}")
         embeddings = embedding_service.generate_embeddings(transcript_chunks)
         
         if embeddings:
-            logger.info(f"Storing transcript for video {video_id} in vector database")
-            weaviate_service.insert_transcript_chunks(video_data, transcript_chunks, embeddings)
+            logger.info(f"Storing transcript for video {video_id} in Milvus vector database")
+            milvus_service.insert_transcript_chunks(video_data, transcript_chunks, embeddings)
     
     return True
 
@@ -93,10 +93,17 @@ def main():
     
     # Only initialize these if needed
     embedding_service = None
-    weaviate_service = None
+    milvus_service = None
     if config.storage_type in [StorageType.VECTOR_DB, StorageType.BOTH]:
-        embedding_service = EmbeddingService()
-        weaviate_service = WeaviateService()
+        embedding_service = EmbeddingService(model_name=config.embedding_model)
+        
+        # Simplified MilvusService initialization for standalone Milvus without authentication
+        milvus_service = MilvusService(
+            uri=config.milvus_uri,
+            collection_name=config.milvus_collection_name,
+            index_type=config.milvus_index_type if hasattr(config, 'milvus_index_type') else "FLAT",
+            index_metric_type=config.milvus_metric_type if hasattr(config, 'milvus_metric_type') else "COSINE"
+        )
     
     try:
         # Get videos from playlist
@@ -126,7 +133,7 @@ def main():
                 video, 
                 transcript_service, 
                 embedding_service, 
-                weaviate_service,
+                milvus_service,
                 excel_service
             ):
                 processed_count += 1
@@ -142,9 +149,9 @@ def main():
         if config.storage_type == StorageType.EXCEL:
             logger.info(f"Video transcripts saved to Excel. Check {excel_service.default_excel_path}")
         elif config.storage_type == StorageType.VECTOR_DB:
-            logger.info(f"Video transcripts stored in Weaviate collection: {config.weaviate_collection_name}")
+            logger.info(f"Video transcripts stored in Milvus collection: {config.milvus_collection_name}")
         else:
-            logger.info(f"Video transcripts saved to both Excel and Weaviate collection")
+            logger.info(f"Video transcripts saved to both Excel and Milvus collection")
             
     except Exception as e:
         logger.exception(f"Error in content harvesting: {e}")
