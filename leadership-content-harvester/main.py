@@ -78,6 +78,54 @@ def process_video(video_data: Dict[str, Any],
     
     return True
 
+def load_excel_to_milvus(excel_service: ExcelService, 
+                         embedding_service: EmbeddingService, 
+                         milvus_service: MilvusService) -> None:
+    """Load transcript data from Excel and store it in Milvus vector database."""
+    logger.info("Loading transcript data from Excel to Milvus")
+    
+    # Get transcript data from Excel
+    transcript_data = excel_service.load_transcripts()
+    
+    if not transcript_data or 'Transcripts' not in transcript_data:
+        logger.error("No transcript data found in Excel file")
+        return
+    
+    transcripts_df = transcript_data['Transcripts']
+    
+    # Group by video_id to process each video
+    grouped_by_video = transcripts_df.groupby(['video_id', 'video_title', 'video_url'])
+    
+    processed_count = 0
+    for (video_id, video_title, video_url), group in grouped_by_video:
+        # Check if video already exists in vector DB
+        if milvus_service.video_exists(video_id):
+            logger.info(f"Video {video_id} already in database, skipping")
+            continue
+            
+        # Extract transcript chunks
+        chunks = group['transcript_chunk'].tolist()
+        
+        # Create video data dictionary
+        video_data = {
+            "id": video_id,
+            "title": video_title,
+            "url": video_url
+        }
+        
+        # Generate embeddings for the chunks
+        logger.info(f"Generating embeddings for video {video_id}")
+        embeddings = embedding_service.generate_embeddings(chunks)
+        
+        if embeddings:
+            logger.info(f"Storing transcript for video {video_id} in Milvus vector database")
+            milvus_service.insert_transcript_chunks(video_data, chunks, embeddings)
+            processed_count += 1
+        else:
+            logger.error(f"Failed to generate embeddings for video {video_id}")
+    
+    logger.success(f"Successfully processed {processed_count} videos from Excel to Milvus")
+
 def main():
     """Main execution function."""
     # Load config from harvester directory, not project root
@@ -106,6 +154,16 @@ def main():
         )
     
     try:
+        # Check if we should load data from Excel to Milvus
+        if hasattr(config, 'load_excel_to_milvus') and config.load_excel_to_milvus:
+            if excel_service and embedding_service and milvus_service:
+                logger.info("Loading data from Excel to Milvus based on config flag")
+                load_excel_to_milvus(excel_service, embedding_service, milvus_service)
+                return  # Exit after loading data from Excel to Milvus
+            else:
+                logger.error("Cannot load from Excel to Milvus: required services not initialized")
+                return
+        
         # Get videos from playlist
         videos = youtube_service.get_playlist_videos(config.youtube_playlist_id)
         
