@@ -1,20 +1,22 @@
 {
   "app": {
-    "youtube_playlist_id": "PLCi3Q_-uGtdlCsFXHLDDHBSLyq4BkQ6gZ",
-    "milvus_uri": "http://localhost:19530",
+    "youtube_playlist_id": "YOUR_PLAYLIST_ID",
+    "milvus_uri": "http://milvus:19530",
     "milvus_user": "",
     "milvus_password": "",
-    "milvus_collection_name": "Video_transcripts",
-    "embedding_model": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
-    "storage_type": "both",
+    "milvus_collection_name": "leadership_content",
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "storage_type": "VECTOR_DB",
     "batch_size": 10,
-    "chunk_size": 500,
+    "chunk_size": 1000,
     "chunk_overlap": 100,
     "log_level": "INFO",
     "data_path": "data",
     "excel_output_path": "leadership_transcripts.xlsx",
-    "max_videos": 0,
-    "load_excel_to_milvus": true
+    "max_videos": 10,
+    "load_excel_to_milvus": true,
+    "milvus_index_type": "IVF_FLAT",
+    "milvus_metric_type": "COSINE"
   }
 }
 
