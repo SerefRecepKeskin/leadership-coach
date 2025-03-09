@@ -9,7 +9,16 @@ import subprocess
 import os
 import shutil
 import sys
-from .youtube_service import YouTubeService  # Import YouTubeService
+import re
+from .youtube_service import YouTubeService
+# Add the src directory to the Python path to enable imports from sibling modules
+current_dir = Path(__file__).parent
+src_dir = current_dir.parent
+if str(src_dir) not in sys.path:
+    sys.path.append(str(src_dir))
+
+# Now import from utils
+from utils import clean_transcript_text
 
 class TranscriptService:
     """Service for retrieving and processing video transcripts."""
@@ -191,7 +200,6 @@ class TranscriptService:
             
             logger.info(f"Transcribing audio with Whisper for {video_id}")
             
-            # Load Whisper model - choose a smaller model for faster processing
             # Load Whisper model - large model for best accuracy
             model = whisper.load_model("large")
             
@@ -207,12 +215,15 @@ class TranscriptService:
             text = result.get("text", "")
             
             if text:
+                # Properly decode any Unicode escape sequences in the text
+                text = clean_transcript_text(text)
+                
                 # Create transcript data in the expected format
                 transcript_data = [{"text": text, "start": 0.0, "duration": 0.0}]
                 
                 # Cache the transcript
-                with open(cache_file, "w") as f:
-                    json.dump(transcript_data, f)
+                with open(cache_file, "w", encoding="utf-8") as f:
+                    json.dump(transcript_data, f, ensure_ascii=False)
                 
                 logger.info(f"Successfully transcribed WAV audio for {video_id} using Whisper")
                 return text.strip()
@@ -228,12 +239,17 @@ class TranscriptService:
             logger.exception("Full exception details:")
             return None
     
+    
     def _format_transcript(self, transcript_data: List[Dict[str, Any]]) -> str:
         """Format transcript data into a readable string."""
         formatted_text = ""
         
         for item in transcript_data:
             text = item.get("text", "").strip()
+            
+            # Apply Unicode normalization to ensure proper character rendering
+            text = clean_transcript_text(text)
+            
             if text:
                 formatted_text += f"{text} "
         
