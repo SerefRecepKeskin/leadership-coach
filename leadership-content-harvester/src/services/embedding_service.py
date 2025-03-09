@@ -1,7 +1,11 @@
 from typing import List, Union
 import numpy as np
+import os
 from loguru import logger
 from sentence_transformers import SentenceTransformer
+
+# Set the environment variable to avoid tokenizers parallelism warning
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 class EmbeddingService:
     """Service for generating embeddings from text using sentence transformers."""
@@ -14,6 +18,8 @@ class EmbeddingService:
             model_name: Name or path of the sentence transformer model
             device: Device to use for inference ('cpu' or 'cuda')
         """
+        # Ensure the environment variable is set
+        os.environ["TOKENIZERS_PARALLELISM"] = "false"
         logger.info(f"Initializing embedding service with model: {model_name} on device: {device}")
         try:
             self.model = SentenceTransformer(model_name, device=device)
