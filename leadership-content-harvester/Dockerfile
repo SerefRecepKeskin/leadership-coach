@@ -16,8 +16,14 @@ RUN apt-get update && \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Create necessary directories
+RUN mkdir -p /app/data
+
 # Copy the application code
 COPY . .
+
+# Ensure proper permissions
+RUN chmod -R 755 /app/data
 
 # Run the harvester script
 CMD ["python", "main.py"]
