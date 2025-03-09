@@ -8,3 +8,4 @@ loguru==0.7.3
 fastapi==0.111.0
 fastapi-limiter==0.1.6
 uvicorn==0.34.0
+nltk==3.9.1
