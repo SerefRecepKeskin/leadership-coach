@@ -79,6 +79,7 @@ services:
       - leadership-network
     # This service should run and exit once data is loaded
     restart: "no"
+    command: ["python", "main.py"]
 
   # --- Backend Services ---
   coach-engine:

@@ -12,12 +12,11 @@ RUN apt-get update && \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
+# Ensure all dependencies are installed correctly
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code
 COPY . .
 
-# Run the harvester script
-CMD ["python", "-m", "src.main"]
+# Set the entrypoint to run the harvester script
+CMD ["python", "main.py"]
