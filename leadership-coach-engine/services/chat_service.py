@@ -26,7 +26,8 @@ async def get_welcome_message() -> MessageResult:
 
         Liderlik becerilerinizi geliştirmenize ve zorluklarla başa çıkmanıza yardımcı olmak için buradayım.
         Bugün size nasıl yardımcı olabilirim?""",
-        "message_id": str(uuid4())
+        "message_id": str(uuid4()),
+        "references": []  # Add empty references for welcome message
     }
     return MessageResult(**result)
 
@@ -49,7 +50,8 @@ async def create_bot_response(session_identifier: str, user_message: str) -> Opt
 
     result = {
         "bot_message": response["response"],
-        "message_id": str(uuid4())
+        "message_id": str(uuid4()),
+        "references": response.get("references", [])  # Include references from worker response
     }
 
     return MessageResult(**result)
