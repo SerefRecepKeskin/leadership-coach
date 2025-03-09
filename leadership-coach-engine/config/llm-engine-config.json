@@ -11,7 +11,7 @@
     "Uri": "http://localhost:19530",
     "User": "",
     "Password": "",
-    "CollectionName": "Video_transcriptssssssssss",
+    "CollectionName": "Video_transcripts",
     "VectorFieldName": "transcript_vector",
     "DistanceThreshold": 0.80,
     "N_Probe": 16
