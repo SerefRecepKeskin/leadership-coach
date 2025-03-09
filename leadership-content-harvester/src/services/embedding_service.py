@@ -1,31 +1,56 @@
 from typing import List, Union
 import numpy as np
 import os
+import torch
 from loguru import logger
 from sentence_transformers import SentenceTransformer
 
 # Set the environment variable to avoid tokenizers parallelism warning
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
+def get_optimal_device():
+    """Determine the optimal device to use for inference on macOS with M1/M2 chips."""
+    if torch.backends.mps.is_available():
+        logger.info("MPS (Metal Performance Shaders) is available - using M2 Pro neural engine")
+        return "mps"
+    elif torch.cuda.is_available():
+        logger.info("CUDA is available - using GPU")
+        return "cuda"
+    else:
+        logger.info("Using CPU for inference")
+        return "cpu"
+
 class EmbeddingService:
     """Service for generating embeddings from text using sentence transformers."""
     
-    def __init__(self, model_name: str = "sentence-transformers/sentence-t5-base", device: str = "cpu"):
+    def __init__(self, model_name: str = "sentence-transformers/sentence-t5-base", device: str = None):
         """
         Initialize the embedding service.
         
         Args:
             model_name: Name or path of the sentence transformer model
-            device: Device to use for inference ('cpu' or 'cuda')
+            device: Device to use for inference ('cpu', 'cuda', or 'mps')
+                    If None, will automatically select the best device
         """
         # Ensure the environment variable is set
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
+        
+        # Auto-detect optimal device if none specified
+        if device is None:
+            device = get_optimal_device()
+            
         logger.info(f"Initializing embedding service with model: {model_name} on device: {device}")
         try:
             self.model = SentenceTransformer(model_name, device=device)
-            self.batch_size = 16  # Default batch size for CPU
-            if device == "cuda":
+            # Set batch size based on device type
+            if device == "mps":
+                self.batch_size = 24  # Good balance for M2 Pro
+            elif device == "cuda":
                 self.batch_size = 32  # Larger batch size for GPU
+            else:
+                self.batch_size = 16  # Default batch size for CPU
+                
+            logger.info(f"Using batch size: {self.batch_size} for device: {device}")
         except Exception as e:
             logger.error(f"Failed to load embedding model: {e}")
             raise
