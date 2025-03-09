@@ -20,6 +20,19 @@ st.header("AI Asistan ile Sohbet Et")
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
+        logger.info(f"Displaying message with role: {message['role']}")
+        # Show references if they exist and this is an assistant message
+        if message["role"] == "bot_message" and "references" in message:
+            with st.expander("References"):
+                for ref in message["references"]:
+                    ref_type = ref.get("type", "")
+                    source = ref.get("source", "")
+                    title = ref.get("title", source)
+                    
+                    if ref_type == "video":
+                        st.write(f"📺 Video: [{title}]({source})")
+                    elif ref_type == "web":
+                        st.write(f"🌐 Web: [{title}]({source})")
 
 # Kullanıcı girişi
 user_input = st.chat_input("Mesajınızı buraya yazın...")
@@ -28,7 +41,7 @@ if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
     with st.chat_message("user"):
         st.markdown(user_input)
-    logger.info(f"Kullanıcı mesajı: {user_input}")
+    logger.info(f"User message with role 'user': {user_input}")
 
     # Backend'e istek gönder
     payload = {"user_message": user_input, "session_identifier": st.session_state.session_id}
@@ -41,15 +54,33 @@ if user_input:
             bot_message = response_data.get("bot_message", "Yanıt alınamadı.")
 
             # Yanıtı state'e ekle ve ekrana yazdır
-            st.session_state.messages.append({"role": "assistant", "content": bot_message})
-            with st.chat_message("assistant"):
+            st.session_state.messages.append({
+                "role": "bot_message", 
+                "content": bot_message,
+                "references": response_data.get("references", [])
+            })
+            with st.chat_message("bot_message"):
                 st.markdown(bot_message)
+                logger.info(f"Bot message with role 'bot_message': {bot_message}")
+                # Show references for the new message
+                if response_data.get("references"):
+                    with st.expander("References"):
+                        for ref in response_data["references"]:
+                            ref_type = ref.get("type", "")
+                            source = ref.get("source", "")
+                            title = ref.get("title", source)
+                            
+                            if ref_type == "video":
+                                st.write(f"📺 Video: [{title}]({source})")
+                            elif ref_type == "web":
+                                st.write(f"🌐 Web: [{title}]({source})")
+
             logger.info(f"Asistan mesajı: {bot_message}")
 
     except requests.exceptions.RequestException as e:
         error_message = f"Sunucu hatası: {str(e)}"
-        st.session_state.messages.append({"role": "assistant", "content": error_message})
-        with st.chat_message("assistant"):
+        st.session_state.messages.append({"role": "bot_message", "content": error_message})
+        with st.chat_message("bot_message"):
             st.markdown(error_message)
         logger.error(f"Hata: {error_message}")
 
