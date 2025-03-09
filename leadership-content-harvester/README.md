@@ -1,139 +1,125 @@
 # Leadership Content Harvester
 
-This tool extracts leadership content from YouTube videos, processes the transcripts, and prepares them for use in leadership coaching applications.
+A tool for harvesting, processing, and storing leadership content from YouTube videos, specifically designed to work with the Leadership Coach project.
+
+## Overview
+
+This tool extracts transcripts from YouTube videos (either individual videos or entire playlists), processes them into manageable chunks, and stores them in either Excel files, a vector database (Milvus), or both. It can also generate embeddings for the transcript chunks to support semantic search capabilities.
 
 ## Features
 
-- Download video metadata from YouTube sources
-- Extract transcripts from videos
-- Process and chunk transcripts for easier consumption
-- Clean and format transcripts for better readability
-- Convert transcript data to various formats for downstream use
+- Extract transcripts from YouTube videos or playlists
+- Process transcripts into manageable chunks with configurable size and overlap
+- Generate embeddings for transcript chunks using transformer models
+- Store data in Excel format for easy viewing and editing
+- Store data in Milvus vector database for semantic search capabilities
+- Load data from Excel into Milvus database
+- Configurable via JSON configuration file
 
-## Setup
+## Requirements
 
-1. Clone the repository
-2. Create a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Copy the example environment file and adjust as needed:
-   ```bash
-   cp .env.example .env
-   ```
+- Python 3.8 or higher
+- Required Python packages (see requirements.txt)
+- (Optional) Milvus database for vector storage
 
-## Project Structure
+## Installation
 
-```
-leadership-content-harvester/
-│
-├── data/                      # Data storage directory
-│   ├── raw/                   # Raw downloaded transcripts
-│   ├── processed/             # Processed transcript files
-│   └── metadata/              # Video metadata files
-│
-├── src/
-│   ├── downloaders/           # Content download modules
-│   │   ├── __init__.py
-│   │   ├── base.py            # Base downloader class
-│   │   └── youtube.py         # YouTube-specific downloader
-│   │
-│   ├── processors/            # Content processing modules
-│   │   ├── __init__.py
-│   │   ├── base.py            # Base processor class
-│   │   ├── cleaner.py         # Text cleaning utilities
-│   │   └── chunker.py         # Text chunking utilities
-│   │
-│   ├── converters/            # Format conversion modules
-│   │   ├── __init__.py
-│   │   ├── base.py            # Base converter class
-│   │   ├── json_converter.py  # JSON output formatter
-│   │   └── text_converter.py  # Plain text output formatter
-│   │
-│   └── main.py                # Main entry point
-│
-├── .env                       # Environment configuration
-├── .env.example               # Example environment configuration
-├── requirements.txt           # Python dependencies
-└── README.md                  # This file
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd leadership-coach/leadership-content-harvester
 ```
 
-## Configuration
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-Edit the `.env` file to configure the application:
-
-- `YOUTUBE_API_KEY`: Your YouTube Data API key
-- `DATA_DIR`: Path where data files will be stored
-- `MAX_VIDEOS`: Maximum number of videos to process at once
-- `CHUNK_SIZE`: Number of characters in each transcript chunk
-- `CHUNK_OVERLAP`: Number of characters to overlap between chunks
+3. Create a `config.json` file (see Configuration section below)
 
 ## Usage
 
-Run the harvester:
+Run the main script:
 
 ```bash
-python -m src.main
+python main.py
 ```
 
-### Command Line Arguments
+### Configuration
 
-The script supports several command-line arguments:
+Create a `config.json` file in the project directory with the following structure:
 
-- `--video-ids`: Comma-separated YouTube video IDs to process
-- `--playlist-id`: YouTube playlist ID to process videos from
-- `--output-format`: Format for output files (json, text)
-- `--clean-only`: Only clean transcripts without chunking
-- `--debug`: Enable debug logging
-
-Examples:
-
-```bash
-# Process specific videos
-python -m src.main --video-ids dQw4w9WgXcQ,jNQXAC9IVRw
-
-# Process videos from a playlist
-python -m src.main --playlist-id PLsomething123
-
-# Output as JSON files
-python -m src.main --video-ids dQw4w9WgXcQ --output-format json
+```json
+{
+  "app": {
+    "youtube_playlist_id": "PLCi3Q_-uGtdlCsFXHLDDHBSLyq4BkQ6gZ",
+    "storage_type": "both",
+    "batch_size": 10,
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "log_level": "INFO",
+    "data_path": "/data",
+    "excel_output_path": "transcripts.xlsx",
+    "max_videos": 0,
+    "load_excel_to_milvus": false,
+    "milvus_uri": "http://localhost:19530",
+    "milvus_token": "",
+    "milvus_user": "",
+    "milvus_password": "",
+    "milvus_collection_name": "video_transcripts",
+    "milvus_index_type": "FLAT",
+    "milvus_metric_type": "COSINE",
+    "embedding_model": "sentence-transformers/sentence-t5-base"
+  }
+}
 ```
 
-## Extending the Functionality
+#### Configuration Options
 
-### Adding New Downloaders
+| Option | Description | Default |
+|--------|-------------|---------|
+| `youtube_playlist_id` | ID of the YouTube playlist to process | "PLCi3Q_-uGtdlCsFXHLDDHBSLyq4BkQ6gZ" |
+| `storage_type` | Where to store the data (`"excel"`, `"vector_db"`, or `"both"`) | "excel" |
+| `batch_size` | Number of videos to process in one batch | 10 |
+| `chunk_size` | Size of transcript chunks in characters | 1000 |
+| `chunk_overlap` | Overlap between consecutive chunks in characters | 100 |
+| `log_level` | Logging level (`"DEBUG"`, `"INFO"`, `"WARNING"`, `"ERROR"`) | "INFO" |
+| `data_path` | Path to store data files | "/data" |
+| `excel_output_path` | Name of the Excel output file | "transcripts.xlsx" |
+| `max_videos` | Maximum number of videos to process (0 = all videos) | 0 |
+| `load_excel_to_milvus` | Whether to load data from Excel to Milvus | false |
+| `milvus_uri` | URI of the Milvus server | "http://localhost:19530" |
+| `milvus_collection_name` | Name of the Milvus collection | "video_transcripts" |
+| `milvus_index_type` | Type of index to use in Milvus | "FLAT" |
+| `milvus_metric_type` | Metric type for similarity search | "COSINE" |
+| `embedding_model` | Transformer model for embedding generation | "sentence-transformers/sentence-t5-base" |
 
-1. Create a new file in `src/downloaders/`
-2. Extend the `BaseDownloader` class from `src/downloaders/base.py`
-3. Implement the required methods
+## Project Structure
 
-### Adding New Processors
+- `main.py`: Entry point for the application
+- `config.py`: Configuration handling
+- `/src/services/`: Contains service classes for various functionalities:
+  - `YouTubeService`: For fetching video metadata and URLs
+  - `TranscriptService`: For extracting and chunking transcripts
+  - `EmbeddingService`: For generating embeddings from text
+  - `MilvusService`: For interacting with the Milvus vector database
+  - `ExcelService`: For storing and loading data from Excel
 
-1. Create a new file in `src/processors/`
-2. Extend the `BaseProcessor` class from `src/processors/base.py`
-3. Implement the required methods
+## Key Functions
 
-### Adding New Output Formats
+- `process_video()`: Processes a single video by extracting transcript, generating embeddings, and storing data
+- `load_excel_to_milvus()`: Loads existing transcript data from Excel into the Milvus database
+- `main()`: Orchestrates the entire process
 
-1. Create a new file in `src/converters/`
-2. Extend the `BaseConverter` class from `src/converters/base.py`
-3. Implement the required methods
+## Workflow
 
-## Development
-
-To contribute to development:
-
-1. Fork the repository
-2. Create a feature branch
-3. Implement your changes
-4. Write tests for new functionality
-5. Submit a pull request
-
-## License
-
-MIT
+1. Load configuration from `config.json`
+2. Initialize required services based on configuration
+3. If `load_excel_to_milvus` is enabled, load data from Excel to Milvus
+4. Otherwise, fetch videos from the specified YouTube playlist
+5. For each video:
+   - Check if it's already in the database (if using Milvus)
+   - Extract and chunk transcript
+   - Generate embeddings (if using Milvus)
+   - Store data in Excel and/or Milvus
+   s
