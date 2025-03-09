@@ -36,4 +36,6 @@ venv/
 /local_test
 
 test*.py
-
+*.lock
+model_cache/
+*.wav
