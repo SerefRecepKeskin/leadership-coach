@@ -1,0 +1,21 @@
+{
+  "LLM": {
+    "MaxTokens": 600,
+    "ApiKey": "",
+    "BaseUrl": ""
+  },
+  "Embeddings": {
+    "EmbeddingModel": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+    },
+  "Milvus": {
+    "Uri": "http://localhost:19530",
+    "User": "",
+    "Password": "",
+    "CollectionName": "Video_transcriptssssssssss",
+    "VectorFieldName": "transcript_vector",
+    "DistanceThreshold": 0.80,
+    "N_Probe": 16
+  }
+}
+
+

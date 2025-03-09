@@ -40,8 +40,6 @@ venv/
 *.env
 
 # Local config folder
-/config
 /docker-test
 
 
-*.lock
