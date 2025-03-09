@@ -1,12 +1,12 @@
 {
   "app": {
     "youtube_playlist_id": "YOUR_PLAYLIST_ID",
-    "milvus_uri": "http://milvus:19530",
+    "milvus_uri": "http://0.0.0.0:19530",
     "milvus_user": "",
     "milvus_password": "",
     "milvus_collection_name": "leadership_content",
     "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
-    "storage_type": "VECTOR_DB",
+    "storage_type": "both",
     "batch_size": 10,
     "chunk_size": 1000,
     "chunk_overlap": 100,
