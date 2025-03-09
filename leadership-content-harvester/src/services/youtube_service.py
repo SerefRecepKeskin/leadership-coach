@@ -57,9 +57,7 @@ class YouTubeService:
                     
                     # Handle title extraction with fallback mechanism
                     title = self._safe_get_title(video, video_url)
-                    
-                    # Safe attribute access for all properties
-                    views = self._safe_get_views(video)
+
                     
                     video_data = {
                         "id": video.video_id,
@@ -67,11 +65,8 @@ class YouTubeService:
                         "url": video_url,
                         "author": getattr(video, "author", "Unknown"),
                         "publish_date": video.publish_date.isoformat() if getattr(video, "publish_date", None) else None,
-                        "views": views,
                         "description": getattr(video, "description", ""),
-                        "thumbnail_url": getattr(video, "thumbnail_url", ""),
-                        "length": self._safe_get_length(video),
-                    }
+                        "thumbnail_url": getattr(video, "thumbnail_url", "")                    }
                     videos.append(video_data)
                     logger.debug(f"Retrieved video: {title}")
                 except Exception as e:
@@ -92,7 +87,9 @@ class YouTubeService:
         """Safely get video title with fallback options."""
         try:
             # Try the standard way first
-            return video.title
+            title = video.title
+            logger.info(f"Successfully extracted title: '{title}'")
+            return title
         except (PytubeError, AttributeError, Exception) as e:
             logger.warning(f"Could not get title normally: {e}")
             
@@ -104,40 +101,16 @@ class YouTubeService:
                     title_search = re.search(r'<title>(.*?)</title>', video.watch_html)
                     if title_search:
                         title = title_search.group(1).replace(' - YouTube', '')
+                        logger.info(f"Extracted title from HTML: '{title}'")
                         return title
             except Exception as e2:
                 logger.warning(f"Fallback 1 failed: {e2}")
             
             # Fallback 2: Just use video ID as title
-            logger.info(f"Using video ID as title for {video_url}")
-            return f"Video {video_id}"
+            title = f"Video {video_id}"
+            logger.info(f"Using video ID as title for {video_url}: '{title}'")
+            return title
     
-    def _safe_get_views(self, video: YouTube) -> int:
-        """Safely get video view count."""
-        try:
-            # Try to get views directly
-            return video.views
-        except (PytubeError, AttributeError, TypeError, Exception) as e:
-            logger.warning(f"Could not get views normally: {e}")
-            
-            # Try accessing the raw data
-            try:
-                if hasattr(video, 'vid_info'):
-                    view_count = video.vid_info.get("videoDetails", {}).get("viewCount")
-                    if view_count and view_count.isdigit():
-                        return int(view_count)
-            except Exception as e2:
-                logger.warning(f"Fallback for views failed: {e2}")
-            
-            return 0
-    
-    def _safe_get_length(self, video: YouTube) -> int:
-        """Safely get video length."""
-        try:
-            return video.length
-        except (PytubeError, AttributeError, TypeError, Exception) as e:
-            logger.warning(f"Could not get length: {e}")
-            return 0
     
     def download_audio(self, video_id: str, download_path: Optional[str] = None) -> Optional[str]:
         """Download audio from a YouTube video using yt-dlp and prepare it for Whisper.
