@@ -108,3 +108,32 @@ class ExcelService:
         except Exception as e:
             logger.error(f"Error appending transcripts to Excel file: {e}")
             raise
+
+    def load_transcripts(self) -> Dict[str, pd.DataFrame]:
+        """Load transcript data from the Excel file.
+        
+        Returns:
+            Dict[str, pd.DataFrame]: Dictionary containing DataFrames for each sheet
+        """
+        try:
+            excel_path = Path(self.default_excel_path)
+            
+            if not excel_path.exists():
+                logger.error(f"Excel file not found: {excel_path}")
+                return {}
+            
+            logger.info(f"Loading transcript data from {excel_path}")
+            
+            # Read all sheets from the Excel file
+            sheets = pd.read_excel(excel_path, sheet_name=None)
+            
+            if not sheets or 'Transcripts' not in sheets:
+                logger.error("No 'Transcripts' sheet found in Excel file")
+                return {}
+            
+            logger.info(f"Successfully loaded transcript data from Excel: {len(sheets['Transcripts'])} rows found")
+            return sheets
+            
+        except Exception as e:
+            logger.exception(f"Error loading transcript data from Excel: {e}")
+            return {}
