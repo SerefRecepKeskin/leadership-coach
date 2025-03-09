@@ -1,0 +1,55 @@
+"""Module for chat services"""
+
+from typing import Optional
+from uuid import uuid4, UUID
+
+from chatbot.worker import ChatbotWorker
+from schemas.chat_schema import MessageResult
+
+# Create a single worker instance
+chatbot_worker = None
+
+async def initialize_worker():
+    """Initialize the chatbot worker"""
+    global chatbot_worker
+    if chatbot_worker is None:
+        chatbot_worker = await ChatbotWorker.create()
+
+async def get_welcome_message() -> MessageResult:
+    """
+    Creates a static welcome message for new chat sessions.
+
+    :return: The welcome message as a MessageResult object.
+    """
+    result = {
+        "bot_message": """👋 Welcome to Leadership Coach! 👋
+
+        I'm here to help you develop your leadership skills and navigate challenges.
+        How can I assist you today?""",
+        "message_id": uuid4()
+    }
+    return MessageResult(**result)
+
+async def create_bot_response(session_identifier: str, user_message: str) -> Optional[MessageResult]:
+    """Generates a bot response to a user's message using the chatbot worker.
+
+    :param session_identifier: The unique identifier of the session.
+    :param user_message: The user's message to which the bot should respond.
+    :return: The bot's response as a `MessageResult` object.
+    """
+    # Initialize worker if not already initialized
+    await initialize_worker()
+    
+    # Use worker to process the prompt
+    response = await chatbot_worker.process_prompt_async(
+        user_id="default-user",  # Using a default user as per requirement
+        session_id=session_identifier,
+        user_message=user_message
+    )
+    
+    result = {
+        "bot_message": response["response"],
+        "message_id": uuid4()
+    }
+
+    return MessageResult(**result)

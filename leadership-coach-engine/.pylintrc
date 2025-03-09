@@ -1,0 +1,7 @@
+[config]
+
+; Ingore defined errors and warnings
+disable =
+    missing-class-docstring,
+    missing-module-docstring
+
