@@ -14,10 +14,10 @@ def send_chat_request(user_message):
         dict: The JSON response from the server
     """
     # API endpoint URL with correct prefix from routes/__init__.py
-    url = "http://localhost:5005/api/v1/chat/message"
+    url = "http://localhost:5006/api/v1/chat/message"
     
     # Generate a random UUID for the session
-    session_id = str(uuid.UUID('c083285c-2ab7-47ba-a351-738e32a07b54'))
+    session_id = str(uuid.UUID('c083285c-2ab7-47ba-a351-738e32a07b52'))
     
     # Prepare headers and payload
     headers = {
@@ -46,7 +46,7 @@ def send_chat_request(user_message):
 
 if __name__ == "__main__":
     # Example message to send
-    message = "Buradan ne anlamalıyım?"
+    message = "aleyhimizde olan ne vardı? Türkiye'de bu işi İstanbul Belediyesi bir ihaleyle başka bir iş yapmak var. Bu bir taksi işinde, regülasyonlarla ilgili de biraz sıkıntı var. O gün aslında sıkıntılı gibi gözüken yanlış gibi gözüken şeyler bile aslında akıllı ve sabırlı davranırsan sonradan avantajına dönüştürebileceğin şeyler olabiliyor. En azından bir şeyden sonra da bir şeyden sonra da bir şeyden sonra da bir şeyden sonra da bir şeyden sonra da bir şeyden sonra da bir şeyden sonra da bir şeyden sonr"
     
     print(f"Sending message: '{message}'")
     response = send_chat_request(message)
