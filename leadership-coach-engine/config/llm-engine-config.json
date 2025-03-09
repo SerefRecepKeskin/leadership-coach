@@ -1,8 +1,8 @@
 {
   "LLM": {
     "MaxTokens": 600,
-    "ApiKey": "",
-    "BaseUrl": ""
+    "ApiKey": "strongpassw",
+    "BaseUrl": "http://0.0.0.0:8023"
   },
   "Embeddings": {
     "EmbeddingModel": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
@@ -11,9 +11,9 @@
     "Uri": "http://localhost:19530",
     "User": "",
     "Password": "",
-    "CollectionName": "Video_transcripts",
+    "CollectionName": "Youtube_video_transcripts",
     "VectorFieldName": "transcript_vector",
-    "DistanceThreshold": 0.80,
+    "DistanceThreshold": 0.70,
     "N_Probe": 16
   }
 }
