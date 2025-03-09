@@ -1,5 +1,9 @@
 # Leadership Coach
 
+**Note: This project is a basic proof of concept (POC) and does not include any security measures. It is not suitable for production use.**
+
+**Note: This project uses an open-source model served by vLLM. Minor changes to the client are required to use OpenAI models.**
+
 An AI-powered leadership coaching platform that provides personalized leadership advice based on expert content.
 
 ## Overview
@@ -25,7 +29,7 @@ The system consists of three main components:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/leadership-coach.git
+   git clone https://github.com/SerefRecepKeskin/leadership-coach.git
    cd leadership-coach
    ```
 
@@ -77,6 +81,34 @@ The system can be configured through:
 - Environment variables in docker-compose.yml
 - Config files in each component's directory
 - LLM settings in coach-engine/config/
+
+### LLM Engine Configuration
+
+The `llm-engine-config.json` file is used to configure the LLM engine. Below is the structure of the file and the fields that need to be set:
+
+```json
+{
+  "LLM": {
+    "MaxTokens": 600,  // Maximum number of tokens for the model to generate
+    "ApiKey": "your_api_key_here",  // API key for authentication
+    "BaseUrl": "http://your_vllm_server_url"  // Base URL of the vLLM server
+  },
+  "Embeddings": {
+    "EmbeddingModel": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"  // Model used for generating embeddings
+  },
+  "Milvus": {
+    "Uri": "http://localhost:19530",  // URI of the Milvus server
+    "User": "",  // Username for Milvus (if applicable)
+    "Password": "",  // Password for Milvus (if applicable)
+    "CollectionName": "Video_transcripts",  // Name of the collection in Milvus
+    "VectorFieldName": "transcript_vector",  // Name of the vector field in the collection
+    "DistanceThreshold": 0.80,  // Distance threshold for vector similarity search
+    "N_Probe": 16  // Number of probes for the search
+  }
+}
+```
+
+Ensure that you set the `ApiKey` and `BaseUrl` fields under the `LLM` section to match your vLLM server configuration.
 
 ## Troubleshooting
 
