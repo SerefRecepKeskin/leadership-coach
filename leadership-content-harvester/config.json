@@ -5,7 +5,7 @@
     "milvus_user": "",
     "milvus_password": "",
     "milvus_collection_name": "leadership_content",
-    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "embedding_model": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
     "storage_type": "both",
     "batch_size": 10,
     "chunk_size": 1000,
