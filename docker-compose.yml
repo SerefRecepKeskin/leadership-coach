@@ -67,9 +67,9 @@ services:
     build:
       context: ./leadership-content-harvester
     environment:
+      - MILVUS_URI=http://milvus:19530
       - MILVUS_HOST=milvus
       - MILVUS_PORT=19530
-      # Add other necessary environment variables for the harvester
     volumes:
       - ${DOCKER_VOLUME_DIRECTORY:-.}/data:/app/data
     depends_on:
