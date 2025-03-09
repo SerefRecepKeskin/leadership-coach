@@ -1,0 +1,10 @@
+addict==2.4.0
+llama-index-core==0.12.20
+llama-index-embeddings-huggingface==0.5.2
+llama-index-llms-openai==0.3.25
+llama-index-vector-stores-milvus==0.5.0
+llama-index-llms-openai-like==0.3.4
+loguru==0.7.3
+fastapi==0.111.0
+fastapi-limiter==0.1.6
+uvicorn==0.34.0
