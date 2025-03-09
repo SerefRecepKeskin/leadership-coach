@@ -1,9 +1,11 @@
-from typing import Dict
+from typing import Dict, List, Optional
 
 from llama_index.core import Settings, VectorStoreIndex
 from llama_index.core.chat_engine import ContextChatEngine
 from llama_index.core.postprocessor import SimilarityPostprocessor
 from llama_index.core.retrievers import VectorIndexRetriever
+from llama_index.core.schema import NodeWithScore
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.vector_stores.milvus import MilvusVectorStore
 
@@ -41,7 +43,7 @@ class ChatbotWorker:
             )
 
             # create and initialize the language model client
-            llm = VLLMClient()  # Initialize with no parameters, as the constructor doesn't take any
+            llm = VLLMClient()
             await llm.initialize()
 
             # set global settings for llama_index
@@ -104,30 +106,77 @@ class ChatbotWorker:
         """
         try:
             # get or create user session to getting memory buffer object
-            session = await self._session_manager.get_or_create_session(session_id)
+            session = await self._session_manager.get_or_create_session(str(session_id))
 
             # get chat history from the user session
             chat_history = session.get()
-
-            # get response by user message and chat history
+            
+            # First try using the chat engine with retrieval
             query_result = await self.chat_engine.achat(
                 user_message,
                 chat_history=chat_history
             )
+            
+            # Check if the response is empty or the sources are empty
+            retrieved_nodes = query_result.source_nodes
+            
+            # Initialize answer variable with a default value
+            answer = ""
+            
+            # If we got no retrieved context or an empty response, fallback to direct LLM
+            if not retrieved_nodes or not query_result.response or query_result.response == "Empty Response":
+                # Fallback to direct LLM interaction without retrieval
+                llm = Settings.llm
+                system_message = ChatMessage(
+                    content=CONVERSATIONAL_SYSTEM_PROMPT,
+                    role=MessageRole.SYSTEM
+                )
+                
+                # Construct messages with chat history and the current user message
+                messages = [system_message]
+                
+                # Add chat history (limited to last few exchanges to save context space)
+                for msg in chat_history[-6:]:  # Limit to last 3 exchanges (6 messages)
+                    # Skip assistant messages with "Empty Response"
+                    if msg.role == MessageRole.ASSISTANT and msg.content == "Empty Response":
+                        continue
+                    messages.append(msg)
+                
+                # Add current user message if not already included
+                user_chat_message = ChatMessage(content=user_message, role=MessageRole.USER)
+                messages.append(user_chat_message)
+                
+                # Send directly to LLM with stop tokens
+                chat_response = await llm.achat(
+                    messages,
+                    stop=["user:", "assistant:", "\nuser", "\nassistant"]
+                )
+                # Explicitly convert to string
+                answer = str(chat_response.message.content) if chat_response and chat_response.message and chat_response.message.content else ""
+            else:
+                # Explicitly convert to string
+                answer = str(query_result.response) if query_result and query_result.response else ""
 
-            answer = query_result.response
+            # split message to get answer (clean up any formatting artifacts)
+            if answer and "\nuser" in answer:
+                answer = answer.split('\nuser')[0]
 
-            # split message to get answer
-            answer = answer.split('\nuser')[0]
+            # Ensure answer is a string and handle None case
+            if answer is None:
+                answer = ""
 
+            # Save the conversation to the session
             await self._session_manager.save_messages(
-                session_id=session_id,
+                session_id=str(session_id),
                 user_message=user_message,
                 assistant_message=answer
             )
 
-            return {'response': answer}
+            # Return the response as a dictionary
+            response_dict = {'response': str(answer)}
+            return response_dict
         except Exception as e:
-            raise RuntimeError(
-                f'Error processing message: {str(e)}'
-            ) from e
+            # Log the error and return an error message
+            error_message = f'Error processing message: {str(e)}'
+            print(error_message)  # Consider using proper logging instead
+            return {'response': f"I'm sorry, I encountered an error: {str(e)}"}
