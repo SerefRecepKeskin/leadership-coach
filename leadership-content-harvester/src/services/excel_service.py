@@ -69,21 +69,21 @@ class ExcelService:
             raise
     
     def append_transcripts(self, transcript_data: List[Dict[str, Any]]) -> None:
-        """
-        Append transcript chunks to the Excel file.
-        
-        Args:
-            transcript_data: List of transcript chunk dictionaries
-        """
+        """Append transcript chunks to the Excel file."""
         try:
-            # Check if file exists
-            if not self.excel_path.exists():
-                # Create new file with empty videos sheet
-                self.save_transcripts([], transcript_data)
+            if not transcript_data:
+                logger.warning("No transcript data to append")
                 return
                 
+            # Check if file exists
+            if not self.excel_path.exists():
+                logger.info("Excel file doesn't exist, creating new file")
+                self.save_transcripts([], transcript_data)
+                return
+                    
             # Load existing data
             transcript_df = pd.DataFrame(transcript_data)
+            logger.info(f"Preparing to append {len(transcript_df)} transcript chunks")
             
             # Check if the Transcripts sheet already exists
             excel_file = pd.ExcelFile(self.excel_path)
@@ -92,21 +92,32 @@ class ExcelService:
             if sheet_exists:
                 # Read existing transcripts and append new data
                 existing_df = pd.read_excel(self.excel_path, sheet_name='Transcripts')
+                logger.info(f"Found existing transcript sheet with {len(existing_df)} rows")
+                
+                # Check for duplicates
+                video_ids = transcript_df['video_id'].unique()
+                existing_videos = existing_df['video_id'].unique()
+                duplicate_videos = set(video_ids) & set(existing_videos)
+                
+                if duplicate_videos:
+                    logger.warning(f"Found duplicate videos in Excel: {duplicate_videos}")
+                
                 combined_df = pd.concat([existing_df, transcript_df], ignore_index=True)
+                logger.info(f"Combined dataframe has {len(combined_df)} rows")
                 
                 # Write to Excel with 'replace' mode
                 with pd.ExcelWriter(self.excel_path, engine='openpyxl', mode='a', 
                                  if_sheet_exists='replace') as writer:
                     combined_df.to_excel(writer, sheet_name='Transcripts', index=False)
             else:
-                # Sheet doesn't exist, add it as a new sheet
+                logger.info("Creating new Transcripts sheet")
                 with pd.ExcelWriter(self.excel_path, engine='openpyxl', mode='a') as writer:
                     transcript_df.to_excel(writer, sheet_name='Transcripts', index=False)
             
-            logger.info(f"Added {len(transcript_data)} transcript chunks to {self.excel_path}")
+            logger.success(f"Successfully added {len(transcript_data)} transcript chunks to {self.excel_path}")
         
         except Exception as e:
-            logger.error(f"Error appending transcripts to Excel file: {e}")
+            logger.exception(f"Error appending transcripts to Excel file: {e}")
             raise
 
     def load_transcripts(self) -> Dict[str, pd.DataFrame]:
