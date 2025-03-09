@@ -4,7 +4,7 @@
     "milvus_uri": "http://localhost:19530",
     "milvus_user": "",
     "milvus_password": "",
-    "milvus_collection_name": "Video_transcriptssssssssss",
+    "milvus_collection_name": "Video_transcripts",
     "embedding_model": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
     "storage_type": "both",
     "batch_size": 10,
@@ -13,7 +13,8 @@
     "log_level": "INFO",
     "data_path": "data",
     "excel_output_path": "leadership_transcripts.xlsx",
-    "max_videos": 0
+    "max_videos": 0,
+    "load_excel_to_milvus": true
   }
 }
 

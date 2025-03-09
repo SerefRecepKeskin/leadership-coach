@@ -38,6 +38,7 @@ class Config:
         self.data_path = "/data"
         self.excel_output_path = "transcripts.xlsx"
         self.max_videos = 0  # 0 means process all videos
+        self.load_excel_to_milvus = False  # Default to False
         
         # Milvus settings
         self.milvus_uri = "http://localhost:19530"
