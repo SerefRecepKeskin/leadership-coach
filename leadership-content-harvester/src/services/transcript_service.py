@@ -60,7 +60,7 @@ class TranscriptService:
         
         if cache_file.exists():
             logger.info(f"Using cached transcript for video {video_id}")
-            with open(cache_file, "r") as f:
+            with open(cache_file, "r", encoding="utf-8") as f:
                 transcript_data = json.load(f)
                 return self._format_transcript(transcript_data)
         
@@ -69,8 +69,8 @@ class TranscriptService:
             transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
             
             # Cache the transcript data
-            with open(cache_file, "w") as f:
-                json.dump(transcript_list, f)
+            with open(cache_file, "w", encoding="utf-8") as f:
+                json.dump(transcript_list, f, ensure_ascii=False)
             
             return self._format_transcript(transcript_list)
             
@@ -130,8 +130,8 @@ class TranscriptService:
                     data = translated.fetch()
                     
                     # Cache the successful transcript
-                    with open(cache_file, "w") as f:
-                        json.dump(data, f)
+                    with open(cache_file, "w", encoding="utf-8") as f:
+                        json.dump(data, f, ensure_ascii=False)
                     
                     logger.info(f"Found translated transcript via {transcript.language_code} → {target_language} for video {video_id}")
                     return self._format_transcript(data)
@@ -152,8 +152,8 @@ class TranscriptService:
             transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=['tr'])
             
             # Cache the successful transcript
-            with open(cache_file, "w") as f:
-                json.dump(transcript_list, f)
+            with open(cache_file, "w", encoding="utf-8") as f:
+                json.dump(transcript_list, f, ensure_ascii=False)
             
             logger.info(f"Found auto-generated Turkish transcript for video {video_id}")
             return self._format_transcript(transcript_list)
