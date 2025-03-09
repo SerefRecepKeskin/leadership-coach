@@ -17,18 +17,19 @@ async def initialize_worker():
 
 async def get_welcome_message() -> MessageResult:
     """
-    Creates a static welcome message for new chat sessions.
+    Creates a static welcome message in Turkish for new chat sessions.
 
-    :return: The welcome message as a MessageResult object.
+    :return: The Turkish welcome message as a MessageResult object.
     """
     result = {
-        "bot_message": """👋 Welcome to Leadership Coach! 👋
+        "bot_message": """👋 Liderlik Koçu'na Hoş Geldiniz! 👋
 
-        I'm here to help you develop your leadership skills and navigate challenges.
-        How can I assist you today?""",
+        Liderlik becerilerinizi geliştirmenize ve zorluklarla başa çıkmanıza yardımcı olmak için buradayım.
+        Bugün size nasıl yardımcı olabilirim?""",
         "message_id": str(uuid4())
     }
     return MessageResult(**result)
+
 
 async def create_bot_response(session_identifier: str, user_message: str) -> Optional[MessageResult]:
     """Generates a bot response to a user's message using the chatbot worker.
