@@ -4,8 +4,8 @@ from pydantic import BaseModel, Field
 
 class MessageRequest(BaseModel):
     user_message: str
-    session_identifier: UUID
+    session_identifier: str  # Changed from UUID to str for flexibility
 
 class MessageResult(BaseModel):
     bot_message: str
-    message_id: UUID
+    message_id: str  # Changed from UUID to str to allow string UUIDs

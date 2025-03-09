@@ -14,13 +14,11 @@ class SessionManager:
 
     async def get_or_create_session(
         self,
-        user_id: str,
         session_id: str
     ) -> ChatMemoryBuffer:
         """
         Get or create user session
 
-        :param user_id: user identifier
         :param session_id: session identifier
         :return: chat memory object
         """
@@ -28,7 +26,7 @@ class SessionManager:
             chat_memory = ChatMemoryBuffer.from_defaults(
                 token_limit=2048,
                 chat_store=self._chat_store,
-                chat_store_key=f'{user_id}:{session_id}'
+                chat_store_key=session_id
             )
 
             self._active_sessions[session_id] = chat_memory

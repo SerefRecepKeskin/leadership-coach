@@ -26,7 +26,7 @@ async def get_welcome_message() -> MessageResult:
 
         I'm here to help you develop your leadership skills and navigate challenges.
         How can I assist you today?""",
-        "message_id": uuid4()
+        "message_id": str(uuid4())
     }
     return MessageResult(**result)
 
@@ -39,17 +39,16 @@ async def create_bot_response(session_identifier: str, user_message: str) -> Opt
     """
     # Initialize worker if not already initialized
     await initialize_worker()
-    
+
     # Use worker to process the prompt
     response = await chatbot_worker.process_prompt_async(
-        user_id="default-user",  # Using a default user as per requirement
         session_id=session_identifier,
         user_message=user_message
     )
-    
+
     result = {
         "bot_message": response["response"],
-        "message_id": uuid4()
+        "message_id": str(uuid4())
     }
 
     return MessageResult(**result)
