@@ -200,15 +200,27 @@ class TranscriptService:
             
             logger.info(f"Transcribing audio with Whisper for {video_id}")
             
-            # Load Whisper model - large model for best accuracy
-            model = whisper.load_model("large")
+            # Use smaller model for faster processing (options: tiny, base, small, medium, large)
+            # tiny and base are much faster but less accurate
+            model_size = "small"  # Changed from "medium" to "small" for faster processing
+            logger.info(f"Using {model_size} model for faster processing")
+            model = whisper.load_model(model_size)
             
-            # The audio is already optimized for Whisper (WAV 16kHz mono)
-            # so we can directly transcribe it without additional preprocessing
+            # Check if GPU is available for FP16
+            import torch
+            use_fp16 = torch.cuda.is_available()
+            logger.info(f"Using {'FP16' if use_fp16 else 'FP32'} precision (GPU available: {use_fp16})")
+            
+            # Use faster settings for transcription
             result = model.transcribe(
                 audio_file, 
                 language="tr",     # Turkish language hint
-                fp16=False         # Set to True if you have GPU with FP16 support
+                fp16=use_fp16,     # Only use FP16 if GPU is available
+                beam_size=1,       # Reduce beam size for faster processing (default is 5)
+                best_of=1,         # Reduce number of candidates for faster processing
+                temperature=0.0,   # Lower temperature for faster deterministic output
+                without_timestamps=True,  # Skip timestamp generation for speed
+                condition_on_previous_text=False  # Don't condition on previous text for independence
             )
             
             # Format the result

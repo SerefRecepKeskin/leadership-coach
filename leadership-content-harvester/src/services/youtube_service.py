@@ -142,31 +142,34 @@ class YouTubeService:
             # Import yt-dlp locally to avoid dependency issues if it's not installed
             import yt_dlp
 
-            # Configure yt-dlp options optimized for Whisper
+            # Configure yt-dlp options optimized for Whisper - reduced quality for speed
             ydl_opts = {
-                'format': 'bestaudio/best',  # Get best audio quality
+                'format': 'worstaudio/worst',  # Get lowest quality audio for faster download/processing
                 'outtmpl': str(download_dir / f"{video_id}.%(ext)s"),  # Output file path pattern
-                'quiet': False,  # Set to False to see detailed output for debugging
-                'no_warnings': False,  # Set to False to see warnings for debugging
+                'quiet': True,  # Set to True to reduce logging
+                'no_warnings': True,  # Set to True to reduce warnings
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',  # Extract audio using ffmpeg
                     'preferredcodec': 'wav',      # Convert to WAV format for best Whisper compatibility
-                    'preferredquality': '192',    # Higher quality, can be reduced later
+                    'preferredquality': '32',     # Lower quality (32kbps) for faster processing
                 }],
-                # Simplified FFmpeg parameters
+                # Simplified FFmpeg parameters - lower quality for speed
                 'postprocessor_args': {
-                    'FFmpegExtractAudio': ['-ar', '16000', '-ac', '1'],  # 16kHz sample rate, mono channel
+                    'FFmpegExtractAudio': [
+                        '-ar', '16000',     # 16kHz sample rate (required by Whisper)
+                        '-ac', '1',         # Mono channel (required by Whisper)
+                        # Additional parameters to make the file smaller
+                        '-vn',              # No video
+                        '-sn',              # No subtitles
+                        '-dn'               # No data streams
+                    ],
                 },
             }
 
             # Download the audio
-            try:
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    info = ydl.extract_info(f'https://www.youtube.com/watch?v={video_id}', download=True)
-                    # Print the downloaded filename for confirmation
-                    print(f"Downloaded audio: {info.get('title')}")
-            except Exception as e:
-                print(f"Error occurred: {e}")
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(f'https://www.youtube.com/watch?v={video_id}', download=True)
+                logger.info(f"Downloaded low-quality audio for processing: {info.get('title')}")
             
             # Check if the file was correctly generated with wav extension
             if not cache_path.exists():
@@ -184,7 +187,7 @@ class YouTubeService:
                     logger.error(f"No output file found for video {video_id}")
                     return None
             
-            logger.info(f"Audio downloaded for video {video_id} to {cache_path} (optimized for Whisper)")
+            logger.info(f"Audio downloaded for video {video_id} to {cache_path} (optimized for speed)")
             return str(cache_path)
         
         except ImportError:
