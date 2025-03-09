@@ -13,6 +13,7 @@ from config import config
 from prompt import CONVERSATIONAL_SYSTEM_PROMPT
 from session.manager import SessionManager
 from vllm.client import VLLMClient
+from .web_search import WebSearchTool
 
 
 class ChatbotWorker:
@@ -95,9 +96,9 @@ class ChatbotWorker:
         return instance
 
     async def process_prompt_async(
-        self,
-        session_id: str,
-        user_message: str
+            self,
+            session_id: str,
+            user_message: str
     ) -> Dict[str, str]:
         """
         Process user message to return response from chat engine
@@ -110,54 +111,83 @@ class ChatbotWorker:
 
             # get chat history from the user session
             chat_history = session.get()
-            
+
             # First try using the chat engine with retrieval
             query_result = await self.chat_engine.achat(
                 user_message,
                 chat_history=chat_history
             )
-            
+
             # Check if the response is empty or the sources are empty
             retrieved_nodes = query_result.source_nodes
-            
-            # Initialize answer variable with a default value
+
+            # Initialize variables
             answer = ""
-            
+            references = []
+
             # If we got no retrieved context or an empty response, fallback to direct LLM
             if not retrieved_nodes or not query_result.response or query_result.response == "Empty Response":
+                # Web search fallback
+                web_search_tool = WebSearchTool()
+                search_result = web_search_tool.search(user_message)
+                
+                # Extract URL from search result
+                url = search_result.split("Source: ")[-1] if "Source: " in search_result else ""
+                if url:
+                    references.append({"type": "web", "source": url})
+                
+                # Combine user message with search results
+                enhanced_user_message = f"{user_message}\n\nI did a web search, and here is the result:\n{search_result}"
+
                 # Fallback to direct LLM interaction without retrieval
                 llm = Settings.llm
                 system_message = ChatMessage(
                     content=CONVERSATIONAL_SYSTEM_PROMPT,
                     role=MessageRole.SYSTEM
                 )
-                
+
                 # Construct messages with chat history and the current user message
                 messages = [system_message]
-                
+
                 # Add chat history (limited to last few exchanges to save context space)
-                for msg in chat_history[-6:]:  # Limit to last 3 exchanges (6 messages)
-                    # Skip assistant messages with "Empty Response"
+                chat_history_without_last = chat_history[:-1]
+                for msg in chat_history_without_last[-6:]:
                     if msg.role == MessageRole.ASSISTANT and msg.content == "Empty Response":
                         continue
                     messages.append(msg)
-                
-                # Add current user message if not already included
-                user_chat_message = ChatMessage(content=user_message, role=MessageRole.USER)
+
+                # Add enhanced user message that includes search results
+                user_chat_message = ChatMessage(content=enhanced_user_message, role=MessageRole.USER)
                 messages.append(user_chat_message)
-                
+
                 # Send directly to LLM with stop tokens
                 chat_response = await llm.achat(
                     messages,
                     stop=["user:", "assistant:", "\nuser", "\nassistant"]
                 )
                 # Explicitly convert to string
-                answer = str(chat_response.message.content) if chat_response and chat_response.message and chat_response.message.content else ""
+                answer = str(
+                    chat_response.message.content) if chat_response and chat_response.message and chat_response.message.content else ""
             else:
-                # Explicitly convert to string
+                # Process vector DB results
                 answer = str(query_result.response) if query_result and query_result.response else ""
+                
+                # Collect video references
+                video_refs = set()
+                for node in retrieved_nodes:
+                    title = node.metadata.get('video_title', 'Unknown Title')
+                    url = node.metadata.get('video_url', 'Unknown URL')
+                    video_refs.add((title, url))
+                
+                # Add video references
+                for title, url in video_refs:
+                    references.append({
+                        "type": "video",
+                        "title": title,
+                        "source": url
+                    })
 
-            # split message to get answer (clean up any formatting artifacts)
+            # Clean up answer
             if answer and "\nuser" in answer:
                 answer = answer.split('\nuser')[0]
 
@@ -172,11 +202,17 @@ class ChatbotWorker:
                 assistant_message=answer
             )
 
-            # Return the response as a dictionary
-            response_dict = {'response': str(answer)}
-            return response_dict
+            # Return response with references
+            return {
+                'response': str(answer),
+                'references': references
+            }
+
         except Exception as e:
             # Log the error and return an error message
             error_message = f'Error processing message: {str(e)}'
             print(error_message)  # Consider using proper logging instead
-            return {'response': f"I'm sorry, I encountered an error: {str(e)}"}
+            return {
+                'response': f"I'm sorry, I encountered an error: {str(e)}",
+                'references': []
+            }
