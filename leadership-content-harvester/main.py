@@ -32,6 +32,8 @@ def process_video(video_data: Dict[str, Any],
     config = get_config()
     video_id = video_data.get("id")
     
+    logger.info(f"Attempting to process video: {video_id} - {video_data.get('title', '')}")
+    
     if not video_id:
         logger.error("Video data missing ID")
         return False
@@ -43,39 +45,48 @@ def process_video(video_data: Dict[str, Any],
             return False
     
     # Get transcript chunks
-    transcript_chunks = transcript_service.get_chunked_transcript(
-        video_id, 
-        chunk_size=config.chunk_size, 
-        overlap=config.chunk_overlap
-    )
-     
-    logger.info(f"Retrieved {len(transcript_chunks)} transcript chunks for video {video_id}")
-    
-    # Prepare transcript data for storage
-    transcript_data = []
-    for i, chunk in enumerate(transcript_chunks):
-        transcript_data.append({
-            "video_id": video_id,
-            "video_title": video_data.get("title", ""),
-            "video_url": video_data.get("url", ""),
-            "chunk_index": i,
-            "transcript_chunk": chunk,
-        }) 
-    
-    # Store in Excel if configured
-    if config.storage_type in [StorageType.EXCEL, StorageType.BOTH] and excel_service:
-        logger.info(f"Storing transcript for video {video_id} in Excel")
-        excel_service.append_transcripts(transcript_data)
-    
-    # Store in Milvus if configured
-    if config.storage_type in [StorageType.VECTOR_DB, StorageType.BOTH] and milvus_service and embedding_service:
-        logger.info(f"Generating embeddings for video {video_id}")
-        embeddings = embedding_service.generate_embeddings(transcript_chunks)
+    try:
+        transcript_chunks = transcript_service.get_chunked_transcript(
+            video_id, 
+            chunk_size=config.chunk_size, 
+            overlap=config.chunk_overlap
+        )
         
-        if embeddings:
-            logger.info(f"Storing transcript for video {video_id} in Milvus vector database")
-            milvus_service.insert_transcript_chunks(video_data, transcript_chunks, embeddings)
+        if not transcript_chunks:
+            logger.warning(f"No transcript chunks retrieved for video {video_id}")
+            return False
+            
+        logger.info(f"Retrieved {len(transcript_chunks)} transcript chunks for video {video_id}")
+        
+        # Prepare transcript data for storage
+        transcript_data = []
+        for i, chunk in enumerate(transcript_chunks):
+            transcript_data.append({
+                "video_id": video_id,
+                "video_title": video_data.get("title", ""),
+                "video_url": video_data.get("url", ""),
+                "chunk_index": i,
+                "transcript_chunk": chunk,
+            })
+        
+        # Store in Excel if configured
+        if config.storage_type in [StorageType.EXCEL, StorageType.BOTH] and excel_service:
+            logger.info(f"Storing {len(transcript_data)} chunks for video {video_id} in Excel")
+            excel_service.append_transcripts(transcript_data)
+        
+        # Store in Milvus if configured
+        if config.storage_type in [StorageType.VECTOR_DB, StorageType.BOTH] and milvus_service and embedding_service:
+            logger.info(f"Generating embeddings for video {video_id}")
+            embeddings = embedding_service.generate_embeddings(transcript_chunks)
+            
+            if embeddings:
+                logger.info(f"Storing transcript for video {video_id} in Milvus vector database")
+                milvus_service.insert_transcript_chunks(video_data, transcript_chunks, embeddings)
     
+    except Exception as e:
+        logger.exception(f"Error processing video {video_id}: {e}")
+        return False
+        
     return True
 
 def load_excel_to_milvus(excel_service: ExcelService, 
@@ -181,12 +192,15 @@ def main():
         # Store all video metadata in Excel if configured
         if config.storage_type in [StorageType.EXCEL, StorageType.BOTH] and excel_service:
             excel_path = excel_service.save_transcripts(videos, [])
-            logger.info(f"Created Excel file with video metadata at {excel_path}")
+            logger.info(f"Created Excel file with {len(videos)} video metadata at {excel_path}")
         
         # Process each video
         processed_count = 0
+        skipped_count = 0
         failed_videos = []
+        
         for video in videos:
+            logger.info(f"Processing video {video.get('id')} - {video.get('title', '')}")
             if process_video(
                 video, 
                 transcript_service, 
@@ -198,10 +212,11 @@ def main():
                 logger.info(f"Processed {processed_count}/{len(videos)} videos")
             else:
                 failed_videos.append(video.get('id'))
+                skipped_count += 1
         
-        logger.success(f"Successfully processed {processed_count} videos")
+        logger.success(f"Processing complete: {processed_count} processed, {skipped_count} skipped/failed")
         if failed_videos:
-            logger.warning(f"Failed to process {len(failed_videos)} videos: {', '.join(failed_videos)}")
+            logger.warning(f"Failed/skipped videos: {', '.join(failed_videos)}")
         
         # Summary based on storage type
         if config.storage_type == StorageType.EXCEL:
