@@ -39,7 +39,7 @@ leadership-coach-engine/
 
 ### Prerequisites
 
-- Python 3.10 or newer
+- Python 3.12 
 - Docker (for containerized deployment)
 - Milvus vector database
 
