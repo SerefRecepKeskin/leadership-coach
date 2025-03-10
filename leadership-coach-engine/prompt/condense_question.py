@@ -1,18 +1,16 @@
-# pylint: skip-file
-# flake8: noqa
 from llama_index.core.prompts import PromptTemplate
 
 CONDENSE_QUESTION_PROMPT = PromptTemplate("""
-    Given the conversation history and a new question, rephrase the question in a self-contained and concise manner.
-    Retain the original meaning and include relevant context when needed.
-    ALWAYS provide the rephrased question in Turkish, regardless of the input language.
+    Verilen konuşma geçmişi ve yeni bir soru göz önüne alındığında, soruyu kendi içinde anlamlı ve özlü bir şekilde yeniden ifade et.
+    Orijinal anlamı koru ve gerektiğinde ilgili bağlamı dahil et.
+    Giriş dili ne olursa olsun yeniden ifade edilmiş soruyu HER ZAMAN Türkçe olarak sağla.
 
-    Chat History:
+    Sohbet Geçmişi:
     {chat_history}
 
-    New Question:
+    Yeni Soru:
     {question}
 
-    Rephrased Question (in Turkish):
+    Yeniden İfade Edilmiş Soru (Türkçe):
     """
 )
