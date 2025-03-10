@@ -1,19 +1,19 @@
 {
   "LLM": {
     "MaxTokens": 600,
-    "ApiKey": "strongpassw",
+    "ApiKey": "stronpassw",
     "BaseUrl": "http://0.0.0.0:8023"
   },
   "Embeddings": {
     "EmbeddingModel": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
     },
   "Milvus": {
-    "Uri": "http://localhost:19530",
+    "Uri": "http://milvus:19530",
     "User": "",
     "Password": "",
     "CollectionName": "Youtube_video_transcripts",
     "VectorFieldName": "transcript_vector",
-    "DistanceThreshold": 0.70,
+    "DistanceThreshold": 0.7,
     "N_Probe": 16
   }
 }
