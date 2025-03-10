@@ -84,6 +84,7 @@ services:
 
   # --- Backend Services ---
   coach-engine:
+    container_name: coach-engine
     build:
       context: ./leadership-coach-engine
     ports:
@@ -91,7 +92,6 @@ services:
     environment:
       - MILVUS_HOST=milvus
       - MILVUS_PORT=19530
-      # Add other necessary environment variables for the engine
     depends_on:
       content-harvester:
         condition: service_completed_successfully
@@ -106,13 +106,13 @@ services:
 
   # --- Frontend Services ---
   coach-ui:
+    container_name: coach-ui
     build:
       context: ./leadership-coach-ui
     ports:
       - "8501:8501"
     environment:
       - BACKEND_URL=http://coach-engine:5006
-      # Add other necessary environment variables for the UI
     depends_on:
       coach-engine:
         condition: service_healthy

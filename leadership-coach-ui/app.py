@@ -2,6 +2,10 @@ import streamlit as st
 import requests
 import uuid
 from loguru import logger
+import os
+
+# Get backend URL from environment variable
+BACKEND_URL = os.getenv('BACKEND_URL', 'http://coach-engine:5006')
 
 # Oturum durumu başlat
 if 'session_id' not in st.session_state:
@@ -10,7 +14,7 @@ if 'messages' not in st.session_state:
     st.session_state.messages = []
 
 # API ayarları
-url = "http://localhost:5006/api/v1/chat/message"
+url = f"{BACKEND_URL}/api/v1/chat/message"
 headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
 # Başlık
