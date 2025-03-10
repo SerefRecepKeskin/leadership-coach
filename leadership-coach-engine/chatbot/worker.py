@@ -14,7 +14,7 @@ from prompt import CONVERSATIONAL_SYSTEM_PROMPT
 from session.manager import SessionManager
 from vllm.client import VLLMClient
 from .web_search import WebSearchTool
-
+from loguru import logger
 
 class ChatbotWorker:
     def __init__(self):
@@ -31,6 +31,13 @@ class ChatbotWorker:
                 model_name=config.embedding.model,
                 cache_folder=config.embedding.cache_dir
             )
+
+            # Log Milvus configuration values
+            logger.info(f"Initializing Milvus with configuration:")
+            logger.info(f"Milvus URI: http://{config.milvus.url}:{config.milvus.port}")
+            logger.info(f"Collection Name: {config.milvus.CollectionName}")
+            logger.info(f"Vector Field Name: {config.milvus.VectorFieldName}")
+            logger.info(f"Output Fields: ['video_title', 'video_url', 'transcript_chunk']")
 
             # set up the Milvus vector store
             vector_store = MilvusVectorStore(
