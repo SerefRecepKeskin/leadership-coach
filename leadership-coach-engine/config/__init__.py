@@ -74,11 +74,17 @@ class MilvusConfig:
     # Legacy properties for backward compatibility
     @property
     def url(self):
-        return "localhost"
+        # Parse the Uri to get the host
+        from urllib.parse import urlparse
+        parsed_uri = urlparse(self.Uri)
+        return parsed_uri.hostname or "milvus"
     
     @property
     def port(self):
-        return 19530
+        # Parse the Uri to get the port
+        from urllib.parse import urlparse
+        parsed_uri = urlparse(self.Uri)
+        return parsed_uri.port or 19530
     
     @property
     def token(self):
