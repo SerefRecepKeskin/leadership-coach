@@ -24,9 +24,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Create non-root user for security
 RUN adduser --disabled-password --gecos "" appuser
 
-# Create NLTK data directory with proper permissions
+# Create necessary directories and set permissions
 RUN mkdir -p /home/appuser/nltk_data && \
-    chown -R appuser:appuser /home/appuser/nltk_data
+    mkdir -p /home/appuser/.cache/tiktoken && \
+    mkdir -p /usr/local/lib/python3.12/site-packages/llama_index/core/_static/tiktoken_cache && \
+    chown -R appuser:appuser /home/appuser/nltk_data && \
+    chown -R appuser:appuser /home/appuser/.cache && \
+    chown -R appuser:appuser /usr/local/lib/python3.12/site-packages/llama_index
 
 # Switch to appuser for downloading NLTK data
 USER appuser
@@ -46,9 +50,10 @@ RUN chown -R appuser:appuser /app
 # Switch to non-root user for running the application
 USER appuser
 
-# Set NLTK_DATA environment variable to point to user's nltk_data directory
+# Set environment variables
 ENV NLTK_DATA=/home/appuser/nltk_data
 ENV PYTHONUNBUFFERED=1
+ENV TIKTOKEN_CACHE_DIR=/home/appuser/.cache/tiktoken
 
 # Expose the port
 EXPOSE 5006
