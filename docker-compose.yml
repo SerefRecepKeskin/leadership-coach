@@ -98,11 +98,11 @@ services:
     networks:
       - leadership-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5006/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:5006/healthcheck"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 15s
+      retries: 5
+      start_period: 60s
 
   # --- Frontend Services ---
   coach-ui:
