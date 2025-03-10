@@ -41,11 +41,11 @@ class Config:
         self.load_excel_to_milvus = False  # Default to False
         
         # Milvus settings
-        self.milvus_uri = "http://localhost:19530"
+        self.milvus_uri = "http://milvus:19530"
         self.milvus_token = ""
         self.milvus_user = ""
         self.milvus_password = ""
-        self.milvus_collection_name = "video_transcripts"
+        self.milvus_collection_name = "Youtube_video_transcripts"
         self.milvus_index_type = "FLAT"
         self.milvus_metric_type = "COSINE"
         
