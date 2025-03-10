@@ -148,7 +148,7 @@ def main():
     # Initialize services
     youtube_service = YouTubeService()
     transcript_service = TranscriptService()
-    excel_service = ExcelService() if config.storage_type in [StorageType.EXCEL, StorageType.BOTH] else None
+    excel_service = ExcelService()
     
     # Only initialize these if needed
     embedding_service = None
