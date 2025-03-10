@@ -97,7 +97,7 @@ The `llm-engine-config.json` file is used to configure the LLM engine. Below is 
     "EmbeddingModel": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"  // Model used for generating embeddings
   },
   "Milvus": {
-    "Uri": "http://localhost:19530",  // URI of the Milvus server
+    "Uri": "http://milvus:19530",  // URI of the Milvus server
     "User": "",  // Username for Milvus (if applicable)
     "Password": "",  // Password for Milvus (if applicable)
     "CollectionName": "Video_transcripts",  // Name of the collection in Milvus
