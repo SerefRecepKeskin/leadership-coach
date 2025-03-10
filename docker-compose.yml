@@ -72,6 +72,7 @@ services:
       - MILVUS_PORT=19530
     volumes:
       - ${DOCKER_VOLUME_DIRECTORY:-.}/data:/app/data
+      - ./leadership-content-harvester/data/leadership_transcripts.xlsx:/app/data/leadership_transcripts.xlsx
     depends_on:
       milvus:
         condition: service_healthy
